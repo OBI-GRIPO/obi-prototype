@@ -1,0 +1,31 @@
+version: '3'
+
+volumes:
+  mongo-volume:
+    driver: local
+  formio-volume:
+    driver: local
+
+services:
+
+  mongodb:
+    image: mongo
+    volumes:
+      - mongo-volume:/data/db
+
+  formio-api:
+    image: skarvelis/formio-api:1.0
+    ports:
+      - 3001:3001
+    environment:
+      - VIRTUAL_HOST=176.9.35.7:3001
+      - REVERSE_PROXY=false
+      - DB_HOST=mongodb
+      - DB_NAME=formio
+      - ADMIN_EMAIL=admin@example.com
+      - ADMIN_PASS=password
+    depends_on:
+      - mongodb
+    volumes:
+      - formio-volume:/app
+
