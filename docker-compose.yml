@@ -5,6 +5,8 @@ volumes:
     driver: local
   formio-volume:
     driver: local
+  bonita-volume:
+    driver: local
 
 services:
 
@@ -18,14 +20,27 @@ services:
     ports:
       - 3001:3001
     environment:
-      - VIRTUAL_HOST=176.9.35.7:3001
+      - VIRTUAL_HOST={--formio_host--}
       - REVERSE_PROXY=false
       - DB_HOST=mongodb
       - DB_NAME=formio
-      - ADMIN_EMAIL=admin@example.com
-      - ADMIN_PASS=password
+      - ADMIN_EMAIL={--formio_admin_email--}
+      - ADMIN_PASS={--formio_admin_password--}
     depends_on:
       - mongodb
     volumes:
       - formio-volume:/app
+
+  bonita-desktop:
+    image: dorowu/ubuntu-desktop-lxde-vnc
+    ports:
+      - 6080:80
+      - 5900:5900
+      - 10000:8080
+    environment: 
+      - VNC_PASSWORD={--bd_vnc_password--}
+      - USER={--bd_user--} 
+      - PASSWORD={--bd_password--}
+    volumes:
+      - bonita-volume:/home/{--bd_user--}
 
