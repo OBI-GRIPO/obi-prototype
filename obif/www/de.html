@@ -1,0 +1,149 @@
+<html>
+  <head>
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'>
+    <link rel='stylesheet' href='https://unpkg.com/formiojs@latest/dist/formio.full.min.css'>
+    <script src='https://unpkg.com/formiojs@latest/dist/formio.full.min.js'></script>
+     <script src="http://code.jquery.com/jquery-2.1.4.js"></script>
+    <script type='text/javascript'>
+      window.onload = function() {
+
+
+
+   var hostname = $(location).attr('hostname');
+   var protocol = $(location).attr('protocol');
+
+window.submitform = function(data){
+console.log(data);
+//Formio.forms.xxxx.submit();
+Object.keys(Formio.forms).forEach(function(key) {
+  console.log(key, Formio.forms[key]);
+  Formio.forms[key].submit();
+});
+}
+
+
+		  
+		var urlParams = new URLSearchParams(window.location.search);
+		var taskId = urlParams.get('id');
+		console.log("taskid",taskId);
+		        
+               Formio.setUser({"data":{"email":"admin@example.com","password":"password"}})
+               Formio.currentUser().then(function(user) {console.log("formio user",user); });//just for info
+
+        
+        var apiToken= localStorage.getItem("X-Bonita-API-Token");                                         /*step 1 name of form here*/
+        var formio = new Formio.createForm(document.getElementById('formio'), protocol+"://"+hostname+":3001/obi-a01-02",
+         {
+           hooks: {
+                 beforeSubmit: (submission, next) => {
+                // Alter the submission       
+                console.log("on before submit, submition",submission );
+               
+                /*step 2 specific logic here for this page*/
+                //var formData = { "flowflag" : submission.data.columns.flowback  };
+
+                var formData = { "flow" : submission.data.flowback  };
+                console.log("on before submit, formdata",formData );
+                console.log("on before submit, apitoken",apiToken);
+        
+// assign before execute! 
+$.ajax({
+       url: protocol+"://"+hostname+":10000/bonita/API/bpm/userTask/"+taskId,
+       type: "GET",
+       headers: {'X-Bonita-API-Token': apiToken},
+       xhrFields: {withCredentials: true},
+       success: function(tdata, textStatus, jqXHR) {
+
+       console.log(tdata,tdata.caseId);
+
+       var caseId=tdata.caseId;
+
+    //todo get id for logged user for assign
+    $.ajax({
+       url: protocol+"://"+hostname+":10000/bonita/API/bpm/userTask/"+taskId,
+       type: "PUT",
+       headers: {'X-Bonita-API-Token': apiToken},
+       xhrFields: {withCredentials: true},
+       data: '{ "assigned_id" : "4" }',
+       success: function(adata, textStatus, jqXHR) {
+
+     
+        $.ajax({
+                         url: protocol+"://"+hostname+":10000/bonita/API/bpm/userTask/"+taskId+"/execution",
+                         type: "POST",
+                         contentType: "application/json",
+                         /*passing the X-Bonita-API-Token for the CSRF security filter*/
+                         headers: {'X-Bonita-API-Token': apiToken},
+                         data: JSON.stringify(formData),
+                         xhrFields: {withCredentials: true},
+                         success: function(edata, textStatus, jqXHR) {
+                            console.log('success execute',edata,textStatus);
+
+                         setTimeout(function(){ 
+                            $.ajax({
+                                  url: protocol+"://"+hostname+":10000/bonita/API/bpm/humanTask?p=0&c=10&f=caseId="+caseId+"&f=state=ready",
+                                  type: "GET",
+                                  headers: {'X-Bonita-API-Token': apiToken},
+                                  xhrFields: {withCredentials: true},
+                                  success: function(adata, textStatus, jqXHR) {
+                                     console.log("tasks",adata);
+                                      window.location.replace(protocol+"://"+hostname+":10000/bonita/portal/form/taskInstance/"+adata[0].id);
+                                  
+                                        },
+                                  error: function(jqXHR, textStatus, errorThrown) {
+                                        console.log('error get humantasks',textStatus,errorThrown,jqXHR);
+                                    next(errorThrown)  
+                                    }
+                                   });
+                             },3000)
+                         //to formio
+                         //next();
+		        }, 
+                         error: function(jqXHR, textStatus, errorThrown) {
+                           console.log('error execute',textStatus,errorThrown,jqXHR);
+                           next(errorThrown)
+                         }
+                });
+
+    }, 
+    error: function(jqXHR, textStatus, errorThrown) {
+                 console.log('error assign',textStatus,errorThrown,jqXHR);
+                           next(errorThrown)
+                    }
+    });     
+
+ }, 
+               error: function(jqXHR, textStatus, errorThrown) {
+                      console.log('error get task data',textStatus,errorThrown,jqXHR);
+                         next(errorThrown)
+                         }
+                   });
+
+                           }
+		  }
+              }
+         ).then(function(form) {
+			 
+        form.on("submit", (submission) => {
+                 console.log('The form was just submitted!!!',submission);
+  
+                });
+                  
+        form.on('error', (errors) => {
+                     console.log('We have errors!',errors);
+  })     
+
+       form.on('sendbackevent', (submission) => {
+                 console.log('The form was just back',submission);
+                  });
+  });
+
+};
+      
+    </script>
+  </head>
+  <body>
+    <div id='formio'></div>
+  </body>
+</html>
+

@@ -44,3 +44,16 @@ services:
     volumes:
       - bonita-volume:/home/{--bd_user--}
 
+  node:
+    image: "node:9"
+    user: "node"
+    working_dir: /home/node/app
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - ./obif/:/home/node/app
+    ports:
+      - 10631:10631
+    command: "npm start"
+
+

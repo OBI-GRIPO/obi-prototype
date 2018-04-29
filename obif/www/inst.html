@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+ <meta charset="utf-8">
+ <title>Demo</title>
+</head>
+<body>
+<h1>OBI - ΥΠΟΒΟΛΗ ΑΙΤΗΜΑ - ΔΙΠΛΩΜΑ ΕΥΡΕΣΙΤΕΧΝΙΑΣ ΓΙΑ Δ.Ε.,Δ.Τ.,Π.Υ.Χ.</h1>
+ <script src="http://code.jquery.com/jquery-2.1.4.js"></script>
+ <script>
+   var formData = {
+     username: "walter.bates",
+     password: "bpm",
+     redirect: false
+   };
+
+   var hostname = $(location).attr('hostname');
+   var protocol = $(location).attr('protocol');
+
+   console.log(hostname,protocol);
+
+var urlParams = new URLSearchParams(window.location.search);
+var id = urlParams.get('id');
+console.log(id);
+   $.ajax({
+     url: protocol+"//"+hostname+":10000/bonita/loginservice",
+     type: "POST",
+     data: formData,
+     xhrFields: {withCredentials: true},
+     success: function(data, textStatus, jqXHR) {
+           $.ajax({
+             url: protocol+"//"+hostname+":10000/bonita/API/system/session/1",
+             type: "GET",
+             xhrFields: {withCredentials: true},
+             success: function(data, textStatus, jqXHR) {
+                   console.log('success getting session');
+                   var apiToken = jqXHR.getResponseHeader('X-Bonita-API-Token');
+                   console.log('X-Bonita-API-Token: ' + apiToken);
+                   localStorage.setItem("X-Bonita-API-Token", apiToken);
+                   var d = new Date();
+                   var n = d.toString();
+                   var formData = { "ccaseInit" : { "name" : "panagiotis", "lastname" : "skarvelis" }, "initTime" : n  }; //proipothesh einai na exei ftiaxtei to bussiness model sto bonita
+
+
+                   $.ajax({
+                         url: protocol+"//"+hostname+":10000/bonita/API/bpm/process/"+id+"/instantiation",
+                         type: "POST",
+                         contentType: "application/json",
+                         /*passing the X-Bonita-API-Token for the CSRF security filter*/
+                         headers: {'X-Bonita-API-Token': apiToken},
+                         data: JSON.stringify(formData),
+                         xhrFields: {withCredentials: true},
+                         success: function(data, textStatus, jqXHR) {
+
+                         console.log('success instatiation',data.caseId);
+                         
+                         $.ajax({
+                         url: protocol+"//"+hostname+":10000/bonita/API/bpm/case/"+data.caseId,
+                         type: "GET",
+                         headers: {'X-Bonita-API-Token': apiToken},
+                          xhrFields: {withCredentials: true},
+                         success: function(cdata, textStatus, jqXHR) {
+						 console.log("case",cdata);	 
+						 },
+                         error: function(jqXHR, textStatus, errorThrown) {
+                           console.log('error get case',textStatus);
+                         }
+					 })
+
+			 $.ajax({
+                         url: protocol+"//"+hostname+":10000/bonita/API/bpm/activity?f=rootCaseId="+data.caseId,
+                         type: "GET",
+                         headers: {'X-Bonita-API-Token': apiToken},
+                          xhrFields: {withCredentials: true},
+                         success: function(adata, textStatus, jqXHR) {
+						 console.log("activity",adata);
+						   window.location.replace(protocol+"//"+hostname+":10000/bonita/portal/form/taskInstance/"+adata[0].id);
+						 },
+                         error: function(jqXHR, textStatus, errorThrown) {
+                           console.log('error get activity',textStatus);
+                         }
+					 }) 
+                         
+                         },
+                         error: function(jqXHR, textStatus, errorThrown) {
+                           console.log('error instatiation',textStatus);
+                         }
+                   });
+
+
+             },
+             error: function(jqXHR, textStatus, errorThrown) {
+               console.log('error getting session',textStatus);
+             }
+           });
+     },
+     error: function(jqXHR, textStatus, errorThrown) {
+       console.log('error login',textStatus);
+     }
+   });
+ </script>
+</body>
+</html>
+
