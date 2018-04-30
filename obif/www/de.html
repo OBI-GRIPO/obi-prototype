@@ -32,7 +32,7 @@ Object.keys(Formio.forms).forEach(function(key) {
 
         
         var apiToken= localStorage.getItem("X-Bonita-API-Token");                                         /*step 1 name of form here*/
-        var formio = new Formio.createForm(document.getElementById('formio'), protocol+"://"+hostname+":3001/obi-a01-02",
+        var formio = new Formio.createForm(document.getElementById('formio'), protocol+"//"+hostname+":3001/obi-a01-02",
          {
            hooks: {
                  beforeSubmit: (submission, next) => {
@@ -40,15 +40,14 @@ Object.keys(Formio.forms).forEach(function(key) {
                 console.log("on before submit, submition",submission );
                
                 /*step 2 specific logic here for this page*/
-                //var formData = { "flowflag" : submission.data.columns.flowback  };
 
-                var formData = { "flow" : submission.data.flowback  };
+                var formData = { "formio_object" : JSON.stringify(submission.data)  };
                 console.log("on before submit, formdata",formData );
                 console.log("on before submit, apitoken",apiToken);
         
 // assign before execute! 
 $.ajax({
-       url: protocol+"://"+hostname+":10000/bonita/API/bpm/userTask/"+taskId,
+       url: protocol+"//"+hostname+":10000/bonita/API/bpm/userTask/"+taskId,
        type: "GET",
        headers: {'X-Bonita-API-Token': apiToken},
        xhrFields: {withCredentials: true},
@@ -60,7 +59,7 @@ $.ajax({
 
     //todo get id for logged user for assign
     $.ajax({
-       url: protocol+"://"+hostname+":10000/bonita/API/bpm/userTask/"+taskId,
+       url: protocol+"//"+hostname+":10000/bonita/API/bpm/userTask/"+taskId,
        type: "PUT",
        headers: {'X-Bonita-API-Token': apiToken},
        xhrFields: {withCredentials: true},
@@ -69,7 +68,7 @@ $.ajax({
 
      
         $.ajax({
-                         url: protocol+"://"+hostname+":10000/bonita/API/bpm/userTask/"+taskId+"/execution",
+                         url: protocol+"//"+hostname+":10000/bonita/API/bpm/userTask/"+taskId+"/execution",
                          type: "POST",
                          contentType: "application/json",
                          /*passing the X-Bonita-API-Token for the CSRF security filter*/
@@ -81,13 +80,13 @@ $.ajax({
 
                          setTimeout(function(){ 
                             $.ajax({
-                                  url: protocol+"://"+hostname+":10000/bonita/API/bpm/humanTask?p=0&c=10&f=caseId="+caseId+"&f=state=ready",
+                                  url: protocol+"//"+hostname+":10000/bonita/API/bpm/humanTask?p=0&c=10&f=caseId="+caseId+"&f=state=ready",
                                   type: "GET",
                                   headers: {'X-Bonita-API-Token': apiToken},
                                   xhrFields: {withCredentials: true},
                                   success: function(adata, textStatus, jqXHR) {
                                      console.log("tasks",adata);
-                                      window.location.replace(protocol+"://"+hostname+":10000/bonita/portal/form/taskInstance/"+adata[0].id);
+                                      window.location.replace(protocol+"//"+hostname+":10000/bonita/portal/form/taskInstance/"+adata[0].id);
                                   
                                         },
                                   error: function(jqXHR, textStatus, errorThrown) {
